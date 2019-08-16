@@ -62,11 +62,9 @@ def get_US_rse_site(institute, institute_country):
     elif institute in WISCONSIN:
         return 'T2_US_Wisconsin_Test'
     else:
-        return 'T1_US_FNAL_Disk_Test'  # FNALLPC ?
+        return 'T1_US_FNAL_Disk_Test'
 
 def get_US_accounts():
-
-    # i = 0
 
     for key, user in cric_global_user_data.items():
         name = key.encode("utf-8")
@@ -74,26 +72,13 @@ def get_US_accounts():
         institute = user['institute'].encode("utf-8")
         institute_country = user['institute_country'].encode("utf-8")
         email = user['institute'].encode("utf-8")
-        # hypernews = ' '.encode("utf-8")
-
-        # if i > 10:  # testing
-          #   break
-
+        
         if "US" in institute_country:
             if name not in cric_US_user:
                 rse_key = get_US_rse_site(institute, institute_country)
                 tmp = create_dict_entry(name, dn, email, institute, institute_country)
 
             cric_US_user.update(tmp)
-
-            # print("User: {} DN: {} Institute: {} Country: {} HN: {}").format(name, dn, institute, institute_country, hypernews)
-            # i = i + 1
-
-    # for key, val in cric_US_user.items():
-    #     print(key, val)
-    #
-    #     print(len(cric_US_user))
-    #     print(i)
 
 def create_dict_entry(name, dn, email, institute, institute_country):
     rse_key = get_US_rse_site(institute, institute_country)
@@ -103,7 +88,6 @@ def create_dict_entry(name, dn, email, institute, institute_country):
             "institute": institute,
             "institute_country": institute_country,
             "email": email,
-            # "hypernews": hypernews,
             "RSES": {
                 rse_key: DEFAULT_RSE_SIZE,
                 'rse_default': 0
@@ -111,19 +95,6 @@ def create_dict_entry(name, dn, email, institute, institute_country):
         }
     }
     return entry
-
-'''def list_t2_rses():
-    """Note that your institute may also have a Tier3 with associated storage space,
-       contact your institute leader for more information. """
-
-    for rse in rses_tmp:
-        if ("T2" in rse['rse'] and "US" in rse['rse']) or "FNAL" in rse['rse']:
-            rses.append(rse['rse'])
-
-    # for r in rses:
-    #     print(r)
-    # print(len(rses))
-'''
 
 def print_mapping(limit=10):
     i = 0
@@ -134,8 +105,7 @@ def print_mapping(limit=10):
 
         for rse_name, rse_size in val['RSES'].items():
             print('\t-{} : {} TB').format(rse_name, rse_size)
-
-        # print('User {} from {} has {} TB at RSE: {}').format(user_key, user_institute, user_quota, user_rse)
+  
         i = i + 1
         if i >= limit:
             break
@@ -152,8 +122,8 @@ def set_user_rse(name, rse, quota):
 
 get_US_accounts()
 print_mapping()
-print('____________________________________')
-get_user_rses('aditya.verma@cern.ch')
-set_user_rse('aditya.verma@cern.ch', 'rse_default', 5)
-get_user_rses('aditya.verma@cern.ch')
+
+#get_user_rses('test')
+#set_user_rse('test', 'rse_default', 5)
+#get_user_rses('test')
 
