@@ -3,12 +3,17 @@ from rucio.client import Client
 import json
 import urllib2
 
+# get all the CRIC user profiles in JSON format
 CRIC_URL = 'https://cms-cric.cern.ch/api/accounts/user/query/list/?json'
 cric_global_user_data = json.load(urllib2.urlopen(CRIC_URL))
+# dictionary with US-based only CRIC users, their RSEs and the corresponding quotas
 cric_US_user = {}
 
 client = Client()
+# filter the RSES to select the US ones
 rses_tmp = client.list_rses('country=US')
+
+# list containing all the US rses
 rses = []
 
 for r in rses_tmp:
@@ -16,6 +21,7 @@ for r in rses_tmp:
 
 DEFAULT_RSE_SIZE = 1  # Tb
 
+# list of US Tier-2's grouped by main institute. Needed for the user-to-site mapping 
 CALIFORNIA = ['California Institute of Technology', 'Lawrence Livermore Nat. Laboratory',
               'University of California Davis', 'University of California  Los Angeles']
 
@@ -37,9 +43,10 @@ FNAL = ['Fermi National Accelerator Lab.']
 
 VANDERBILT = ['Vanderbilt University']
 
+# return a US Site based on the user's institute and institute country 
 def get_US_rse_site(institute, institute_country):
 
-    if not institute:       # institute = "", the user no longer belong to CMS
+    if not institute:       # institute = "", the user no longer belong to CMS Experiment
         return
 
     if "US" not in institute_country:
@@ -67,19 +74,25 @@ def get_US_rse_site(institute, institute_country):
 def get_US_accounts():
 
     for key, user in cric_global_user_data.items():
-        name = key.encode("utf-8")
-        dn = user['dn'].encode("utf-8")
-        institute = user['institute'].encode("utf-8")
-        institute_country = user['institute_country'].encode("utf-8")
-        email = user['institute'].encode("utf-8")
+	institute_country = user['institute_country'].encode("utf-8")
         
         if "US" in institute_country:
+	    name = key.encode("utf-8")
+            dn = user['dn'].encode("utf-8")
+            institute = user['institute'].encode("utf-8")
+            email = user['institute'].encode("utf-8")
+        
+	    # check for duplicates
             if name not in cric_US_user:
+		# obtain the right RSE for the current user based on its institute
                 rse_key = get_US_rse_site(institute, institute_country)
+		# utility function
                 tmp = create_dict_entry(name, dn, email, institute, institute_country)
+	    	
+		# update the dictionary
+            	cric_US_user.update(tmp)
 
-            cric_US_user.update(tmp)
-
+# return a dictionary entry
 def create_dict_entry(name, dn, email, institute, institute_country):
     rse_key = get_US_rse_site(institute, institute_country)
     entry = {
@@ -96,6 +109,7 @@ def create_dict_entry(name, dn, email, institute, institute_country):
     }
     return entry
 
+# debugging function
 def print_mapping(limit=10):
     i = 0
     for user_key, val in cric_US_user.items():
@@ -110,11 +124,13 @@ def print_mapping(limit=10):
         if i >= limit:
             break
 
+# debugging function
 def get_user_rses(name):
     user_val = cric_US_user[name]
     for rse_name, rse_size in user_val['RSES'].items():
         print('User {} has now {} TB at {}').format(name, rse_size, rse_name)
 
+# set a new quota for a certain RSE for a given user
 def set_user_rse(name, rse, quota):
     user_val = cric_US_user[name]
     user_rse = user_val['RSES']
@@ -123,6 +139,7 @@ def set_user_rse(name, rse, quota):
 get_US_accounts()
 print_mapping()
 
+# testing
 #get_user_rses('test')
 #set_user_rse('test', 'rse_default', 5)
 #get_user_rses('test')
