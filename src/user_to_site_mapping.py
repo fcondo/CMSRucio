@@ -14,28 +14,28 @@ DEFAULT_RSE_SIZE = 1  # Tb
 # dictionary of US Tier-2's lists grouped by main institute (key = RSE).  Needed for the user-to-site mapping
 rses_by_country = {
     "US": {
-        'T2_US_Caltech': ['California Institute of Technology', 'Lawrence Livermore Nat. Laboratory',
+        'T2_US_Caltech_Test': ['California Institute of Technology', 'Lawrence Livermore Nat. Laboratory',
                           'University of California Davis', 'University of California  Los Angeles'],
 
-        'T2_US_Florida': ['Florida International University', 'Florida State University',
+        'T2_US_Florida_Test': ['Florida International University', 'Florida State University',
                           'Florida Institute of Technology', 'University of Florida', 'University of Puerto Rico'],
 
-        'T2_US_MIT': ['Boston University', 'Brown University', 'Fairfield University',
+        'T2_US_MIT_Test': ['Boston University', 'Brown University', 'Fairfield University',
                       'Massachusetts Inst. of Technology', 'Northeastern University'],
 
-        'T2_US_Nebraska': ['University of Colorado Boulder', 'University of Iowa', 'Kansas State University',
+        'T2_US_Nebraska_Test': ['University of Colorado Boulder', 'University of Iowa', 'Kansas State University',
                            'The University of Kansas', 'University of Nebraska Lincoln'],
 
-        'T2_US_Purdue': ['Carnegie-Mellon University', 'Ohio State University',
+        'T2_US_Purdue_Test': ['Carnegie-Mellon University', 'Ohio State University',
                          'Purdue University', 'The State University of New York SUNY'],
 
-        'T2_US_UCSD': ['University of California Riverside', 'Univ. of California Santa Barbara',
+        'T2_US_UCSD_Test': ['University of California Riverside', 'Univ. of California Santa Barbara',
                        'Univ. of California San Diego'],
 
-        'T2_US_Wisconsin': ['University of Minnesota', 'University of Rochester', 'Wayne State University',
+        'T2_US_Wisconsin_Test': ['University of Minnesota', 'University of Rochester', 'Wayne State University',
                             'University of Wisconsin Madison'],
 
-        'T1_US_FNAL_Disk': ['Fermi National Accelerator Lab.']
+        'T1_US_FNAL_Disk_Test': ['Fermi National Accelerator Lab.']
 
         # , 'T2_US_Vanderbilt': ['Vanderbilt University']
     }
