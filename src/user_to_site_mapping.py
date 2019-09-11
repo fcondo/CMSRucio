@@ -2,7 +2,6 @@
 
 from rucio.client import Client
 from rucio.common.exception import RSENotFound, AccountNotFound, AccessDenied, RSEOperationNotSupported
-# from rucio.api.permission import has_permission
 
 import os
 import sys
@@ -40,10 +39,7 @@ def user_to_site_mapping_by_country(country):
     Then update the cric_user dictionary.
     """
     cric_global_user = json.load(urllib2.urlopen(util.CRIC_URL))
-    '''issuer = client.whoami()
-    if not permission.has_permission(issuer, action='set_limits'):
-        raise AccessDenied('Account %s can not set_limits' % (issuer))
-    '''
+    
     for key, user in cric_global_user.items():
         institute_country = user['institute_country'].encode("utf-8")
 
