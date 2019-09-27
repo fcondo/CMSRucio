@@ -1,22 +1,19 @@
 #! /usr/bin/env python
 
+"""
+This class store a <RSE-quota> couple. Each CricUser has a list of Quota objects.
+"""
 
 class Quota:
 
-    def __init__(self, site_name, quota):
-        self._site_name = site_name
-        self._quota = quota
+    def __init__(self, sitename, quota):
+        self.sitename = sitename
+        self.quota = quota
 
-    def get_site_name(self):
-        return self._site_name
-
-    def get_quota(self):
-        return self._quota
-
-    def set_site_name(self, site_name):
-        self._site_name = site_name
+    def set_sitename(self, sitename):
+        self.sitename = sitename
 
     def set_quota(self, new_quota):
-        self._quota = new_quota
+        self.quota = new_quota
 
 

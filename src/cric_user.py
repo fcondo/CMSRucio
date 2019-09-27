@@ -1,82 +1,68 @@
 #! /usr/bin/env python
 
-# from rse_limit import RSE_limit
+from rucio.client import Client
 from rucio.common.exception import RSENotFound
+
+"""
+This class helps to store all the info needed to map a user to an RSE. It contains a policy instance for each user
+to specify different policies for different users. The rses_list allows an user to have quotas at different sites.
+"""
 
 class CricUser:
 
-    def __init__(self, username, email, dn, institute, institute_country, policy, option):
-        self._username = username
-        self._email = email
-        self._dn = dn
-        self._institute = institute
-        self._institute_country = institute_country
-        self._policy = policy
-        self._rses_list = []
+    def __init__(self, username, email, dn, account_type, institute, institute_country, policy, option):
+        self.username = username
+        self.email = email
+        self.dn = dn
+        self.account_type = account_type
+        self.institute = institute
+        self.institute_country = institute_country
+        self.policy = policy
+        self.rses_list = []
         try:
-            self._rses_list.append(self._policy.get_rse(username=username, institute=self._institute,
-                                                        institute_country=self._institute_country, option=option))
+            self.rses_list = self.policy.get_rse(username=self.username, institute=self.institute,
+                                                      institute_country=self.institute_country, option=option)
         except RSENotFound:
             raise
         except Exception:
             pass
 
-    def get_username(self):
-        return self._username
-
-    def get_email(self):
-        return self._email
-
-    def get_dn(self):
-        return self._dn
-
-    def get_policy(self):
-        return self._policy
-
-    def get_institute(self):
-        return self._institute
-
-    def get_institute_country(self):
-        return self._institute_country
-
-    def get_rses_list(self):
-        return self._rses_list
-
     def get_rse(self, site_name):
-        for rse in self._rses_list:
-            if rse.get_site_name() == site_name:
+        for rse in self.rses_list:
+            if rse.sitename == site_name:
                 return rse
 
+        raise RSENotFound
+
     def get_rse_quota(self, site_name):
-        for rse in self._rses_list:
-            if rse.get_site_name() == site_name:
-                return rse.get_quota()
+        for rse in self.rses_list:
+            if rse.sitename == site_name:
+                return rse.quota
 
     def add_rse(self, rse):
-        self._rses_list.append(rse)
+        self.rses_list.append(rse)
+        rucio_rses = [r['rse'] for r in Client().list_rses()]
+
+        if rse.site_name not in rucio_rses:
+            raise RSENotFound
 
     def delete_rse_by_name(self, site_name):
-        for rse in self._rses_list:
-            if rse.get_site_name() == site_name:
+        for rse in self.rses_list:
+            if rse.sitename == site_name:
                 del rse
 
-    def set_username(self, username):
-        self._username = username
-
-    def set_email(self, email):
-        self._email = email
-
-    def set_dn(self, dn):
-        self._dn = dn
-
-    def set_institute(self, institute):
-        self._institute = institute
-
-    def set_institute_country(self, institute_country):
-        self._institute_country = institute_country
-
     def set_rse_quota(self, site_name, new_quota):
-        for rse in self._rses_list:
-            if rse.get_site_name() == site_name:
-                rse.set_limit(new_quota)
+        for rse in self.rses_list:
+            if rse.sitename == site_name:
+                rse.set_quota(new_quota)
+
+    def change_policy(self, policy, **kwargs):
+        self.policy = policy
+        try:
+            self.rses_list.clear()
+            self.rses_list = (self.policy.get_rse(kwargs, option='set-new-only'))
+        except RSENotFound:
+            raise
+        except Exception:
+            pass
 

@@ -1,63 +1,103 @@
 #! /usr/bin/env python
 
-from rucio.client import Client
-from rucio.common.exception import AccountNotFound
-
-from institute_policy import InstitutePolicy
-from cric_user import CricUser
-
 import getopt
 import sys
 import json
 import urllib2
 
-client = Client()
-policy = InstitutePolicy()
+from rucio.client import Client
+from rucio.common.exception import AccountNotFound
 
+from institute_policy import InstitutePolicy
+sys.path.insert(1, './tests')
+from policy_test import TestPolicy
+from cric_user import CricUser
+
+
+client = Client()
+institute_policy = InstitutePolicy()
+test_policy = TestPolicy()
 cric_user_list = []
 
+"""
+This function loads the JSON file by CRIC API or by local file depending on the dry_run option.
+"""
 
 def load_cric_users(policy, dry_run):
     if not dry_run:
-        worldwide_cric_users = json.load(urllib2.urlopen(policy.get_cric_url()))
+        worldwide_cric_users = json.load(urllib2.urlopen(policy.CRIC_USERS_API))
     else:
         sys.stdout.write('\t- dry_run version with the new fake user loaded\n')
         with open('fake_cric_users.json') as json_file:
             worldwide_cric_users = json.load(json_file)
     return worldwide_cric_users
 
+"""
+For each CRIC user build a CricUser object with all the info needed to apply the US CMS policy in Rucio.
+"""
 
-def map_cric_users(policy, country, option, dry_run):
-    worldwide_cric_users = load_cric_users(policy, dry_run)
+def map_cric_users(country, option, dry_run):
+    worldwide_cric_users = load_cric_users(institute_policy, dry_run)
 
-    for key, user in worldwide_cric_users.items():
-        institute_country = user['institute_country'].encode("utf-8")
-
-        if country in institute_country:
-            dn = user['dn'].encode("utf-8")
-            institute = user['institute'].encode("utf-8")
-            email = user['email'].encode("utf-8")
-            username = user['profiles'][0]['login'].encode("utf-8")
-
-            if username == 'perichmo':
-                continue
-
-            cric_user = CricUser(username, email, dn, institute, institute_country, policy, option)
-            cric_user_list.append(cric_user)
+    for key, user in worldwide_cric_users.items():            
+        if option == 'delete-all':
             try:
-                client.get_account(username)
-            except AccountNotFound:
-                client.add_account(username, 'USER', email)
-                # sys.stdout.write("\t- Added account " + username + "\n")
+                username = user['profiles'][0]['login'].encode("utf-8")
+            except Exception,KeyError:
+                continue
+            for rse, val in client.get_account_limits(username).items(): 
+                client.delete_account_limit(username, rse)
 
-            rses_list = cric_user.get_rses_list()
-            for rse in rses_list:
-                rse_name = rse.get_site_name()
-                rse_quota = rse.get_quota()
-                if rse_quota is None:
-                    client.delete_account_limit(username, rse_name)
-                else:
-                    client.set_account_limit(username, rse_name, rse_quota)
+        institute_country = user['institute_country'].encode("utf-8")
+        institute = user['institute'].encode("utf-8")
+        dn = user['dn'].encode("utf-8")
+        email = user['email'].encode("utf-8")
+        account_type = "USER"
+        policy = ''
+        try:
+            username = user['profiles'][0]['login'].encode("utf-8")
+            if not institute or not institute_country:
+                policy = test_policy
+                message = "TestPolicy applied to the user {0} (missing info for the US CMS policy)\n".format(username)
+                #sys.stdout.write(message)
+                raise Exception
+            elif country != "" and country in institute_country:
+                if username == 'perichmo':
+                    continue
+                policy = institute_policy
+        except Exception, KeyError:
+            continue
+
+        cric_user = CricUser(username, email, dn, account_type, institute, institute_country, policy, option)
+        cric_user_list.append(cric_user)
+        set_rucio_limits(cric_user)
+
+
+"""
+This function sets the Rucio limits, and if needed it also create a Rucio account.
+"""
+def set_rucio_limits(cric_user):
+    try:
+        client.get_account(cric_user.username)
+    except AccountNotFound:
+        client.add_account(cric_user.username, cric_user.account_type, cric_user.email)
+    for rse in cric_user.rses_list:
+        client.set_account_limit(cric_user.username, rse.sitename, rse.quota)
+
+
+def get_cric_user(username):
+    for user in cric_user_list:
+        if user.username == username:
+            return user
+    raise KeyError
+
+"""
+This function modify the policy of one user.
+"""
+def change_cric_user_policy(username, policy):
+    cric_user = get_cric_user(username)
+    cric_user.change_policy(policy)
+    set_rucio_limits(cric_user)
 
 
 def usage():
@@ -96,7 +136,7 @@ def main():
         usage()
         sys.exit(2)
 
-    map_cric_users(policy, 'US', option, dry_run)
+    map_cric_users('US', option, dry_run)
 
 
 if __name__ == '__main__':
